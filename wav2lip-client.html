@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Lip2Wav-HD Runner</title>
+    <style>
+        :root {
+            --bg: #0f1226;
+            --bg-2: #121637;
+            --panel: #161a42;
+            --accent: #8a7dff;
+            --accent-2: #72e9ff;
+            --text: #ecf1ff;
+            --muted: #aab2d6;
+            --error: #ff6b6b;
+            --ok: #1ad1a5;
+            --warn: #ffb24d;
+            --shadow: 0 12px 30px rgba(0, 0, 0, .35);
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Inter, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            color: var(--text);
+            background:
+                radial-gradient(1200px 600px at 10% -10%, rgba(138, 125, 255, .35), transparent 50%),
+                radial-gradient(900px 500px at 100% 0%, rgba(114, 233, 255, .28), transparent 50%),
+                linear-gradient(180deg, var(--bg), #0a0d1c 70%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .app {
+            width: min(1100px, 100%);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, .01));
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        header {
+            padding: 22px 26px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(90deg, rgba(138, 125, 255, .08), rgba(114, 233, 255, .06));
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .brand {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-weight: 700;
+            letter-spacing: .3px;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: conic-gradient(from 210deg, var(--accent), var(--accent-2));
+            box-shadow: 0 6px 18px rgba(138, 125, 255, .45);
+        }
+
+        .badge {
+            font-size: 12px;
+            color: var(--bg);
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-weight: 700;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1.1fr .9fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        @media (max-width: 960px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: linear-gradient(180deg, var(--panel), var(--bg-2));
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: var(--radius);
+            padding: 18px;
+            backdrop-filter: blur(6px);
+        }
+
+        .section-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+
+        .dropzone {
+            position: relative;
+            border: 2px dashed rgba(255, 255, 255, .2);
+            border-radius: 14px;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            transition: .2s border-color, .2s background;
+            background: rgba(255, 255, 255, .02);
+        }
+
+        .dropzone.dragover {
+            border-color: var(--accent-2);
+            background: rgba(114, 233, 255, .06);
+        }
+
+        .drop {
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 12px;
+            padding: 14px;
+            min-height: 130px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .drop label {
+            font-weight: 700;
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .hint {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field input {
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .12);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 10px;
+            outline: none;
+        }
+
+        .field small {
+            color: var(--muted);
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: none;
+            outline: none;
+            cursor: pointer;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            color: var(--bg);
+            font-weight: 800;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(138, 125, 255, .25);
+            transition: transform .06s ease, filter .2s ease;
+        }
+
+        button.secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, .16);
+            box-shadow: none;
+        }
+
+        button:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+            filter: grayscale(.2);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .progress {
+            margin-top: 14px;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 12px;
+            overflow: hidden;
+            height: 12px;
+            position: relative;
+        }
+
+        .bar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, .25);
+            transition: width .25s ease;
+        }
+
+        .status-line {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .status-line strong {
+            color: var(--text);
+        }
+
+        .preview {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .preview .pane {
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        video,
+        audio {
+            width: 100%;
+            border-radius: 10px;
+            background: #000;
+            outline: none;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 640px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            border: 1px solid rgba(255, 255, 255, .14);
+            background: rgba(255, 255, 255, .04);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--muted);
+        }
+
+        .dot.ok {
+            background: var(--ok);
+        }
+
+        .dot.err {
+            background: var(--error);
+        }
+
+        .dot.run {
+            background: var(--warn);
+        }
+
+        .small {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .error {
+            color: var(--error);
+        }
+
+        .success {
+            color: var(--ok);
+        }
+
+        footer {
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            background: linear-gradient(90deg, rgba(138, 125, 255, .08), rgba(114, 233, 255, .06));
+        }
+
+        code.inline {
+            background: rgba(0, 0, 0, .35);
+            border: 1px solid rgba(255, 255, 255, .12);
+            padding: 2px 6px;
+            border-radius: 6px;
+            color: var(--accent-2);
+        }
+
+        .log-output {
+            background: rgba(0, 0, 0, .35);
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 150px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 8px;
+            color: var(--muted);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <header>
+            <div class="brand">
+                <div class="logo" aria-hidden="true"></div>
+                <div>
+                    <div style="font-size: 18px;">Sujip's GAN Orchestrator</div>
+                    <div class="small">Upload face+background video and an audio track, run, then preview the
+                        synthesized output.</div>
+                </div>
+            </div>
+            <div class="badge">Cloud API</div>
+        </header>
+
+        <main>
+            <!-- Left: Inputs and Controls -->
+            <section class="card">
+                <div class="section-title">Inputs</div>
+
+                <div id="dropzone" class="dropzone" aria-label="Upload inputs via drag and drop">
+                    <div class="drop" id="videoDrop">
+                        <input type="file" id="videoFile" accept="video/*" />
+                        <div style="font-size: 28px; opacity:.85;">🎬</div>
+                        <label for="videoFile">Face+Background Video</label>
+                        <div class="hint">MP4, MOV, WebM • up to ~500MB</div>
+                        <div id="videoName" class="small"></div>
+                    </div>
+                    <div class="drop" id="audioDrop">
+                        <input type="file" id="audioFile" accept="audio/*" />
+                        <div style="font-size: 28px; opacity:.85;">🎵</div>
+                        <label for="audioFile">Audio File</label>
+                        <div class="hint">WAV, MP3, M4A • mono recommended</div>
+                        <div id="audioName" class="small"></div>
+                    </div>
+                </div>
+
+                <div class="inputs">
+                    <div class="field">
+                        <label for="apiBase">API Base URL</label>
+                        <input id="apiBase" type="url" value="http://0.0.0.0:8000" />
+                        <small>Base endpoint for your Wav2Lip service.</small>
+                    </div>
+                    <div class="field">
+                        <label for="outfileTag">Output Filename</label>
+                        <input id="outfileTag" type="text" placeholder="output_video" value="output_video" />
+                        <small>Name for the generated video file.</small>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button id="startBtn">Start Synthesis</button>
+                    <button id="resetBtn" class="secondary">Reset Process</button>
+                    <span class="pill" id="statusPill"><span class="dot"></span><span id="statusText">Idle</span></span>
+                </div>
+
+                <div class="progress" aria-label="Upload and processing progress">
+                    <div class="bar" id="progressBar"></div>
+                </div>
+                <div class="status-line">
+                    <strong>Status:</strong> <span id="statusDetail">Waiting for inputs</span>
+                </div>
+                <div class="status-line small">
+                    <span id="jobInfo"></span>
+                </div>
+                <div class="status-line small error" id="errorLine" style="display:none;"></div>
+                <div id="logOutput" class="log-output" style="display:none;"></div>
+            </section>
+
+            <!-- Right: Preview -->
+            <section class="card preview">
+                <div class="section-title">Preview</div>
+
+                <div class="grid-2">
+                    <div class="pane">
+                        <div class="small">Input Video</div>
+                        <video id="inputVideo" controls playsinline></video>
+                    </div>
+                    <div class="pane">
+                        <div class="small">Input Audio</div>
+                        <audio id="inputAudio" controls></audio>
+                    </div>
+                </div>
+
+                <div class="pane">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="small">Synthesized Output</div>
+                        <a id="downloadLink" class="small" href="#" download style="display:none;">Download video</a>
+                    </div>
+                    <video id="outputVideo" controls playsinline></video>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="small">Tip: For best results, use a clear, front-facing video and clean speech audio.</div>
+            <div class="small">Config: <code class="inline">POST /upload</code>, <code
+                    class="inline">POST /process/start</code>, <code class="inline">GET /process/status</code></div>
+        </footer>
+    </div>
+
+    <script>
+        const els = {
+            videoFile: document.getElementById('videoFile'),
+            audioFile: document.getElementById('audioFile'),
+            videoName: document.getElementById('videoName'),
+            audioName: document.getElementById('audioName'),
+            inputVideo: document.getElementById('inputVideo'),
+            inputAudio: document.getElementById('inputAudio'),
+            outputVideo: document.getElementById('outputVideo'),
+            downloadLink: document.getElementById('downloadLink'),
+            apiBase: document.getElementById('apiBase'),
+            outfileTag: document.getElementById('outfileTag'),
+            startBtn: document.getElementById('startBtn'),
+            resetBtn: document.getElementById('resetBtn'),
+            dropzone: document.getElementById('dropzone'),
+            videoDrop: document.getElementById('videoDrop'),
+            audioDrop: document.getElementById('audioDrop'),
+            statusPill: document.getElementById('statusPill'),
+            statusText: document.getElementById('statusText'),
+            statusDetail: document.getElementById('statusDetail'),
+            jobInfo: document.getElementById('jobInfo'),
+            errorLine: document.getElementById('errorLine'),
+            progressBar: document.getElementById('progressBar'),
+            logOutput: document.getElementById('logOutput'),
+        };
+
+        let videoTag = '';
+        let audioTag = '';
+        let processTag = '';
+        let pollTimer = null;
+        let isProcessing = false;
+
+        // Load saved process tag from localStorage
+        function loadSavedProcess() {
+            const saved = localStorage.getItem('wav2lip_process_tag');
+            if (saved) {
+                processTag = saved;
+                els.jobInfo.textContent = 'Process ID: ' + processTag;
+                checkStatus();
+            }
+        }
+
+        // Helpers
+        function setStatus(mode, detail) {
+            els.statusText.textContent = mode;
+            els.statusDetail.textContent = detail || '';
+            const dot = els.statusPill.querySelector('.dot');
+            dot.className = 'dot';
+
+            if (mode === 'Idle') dot.classList.add('');
+            if (mode === 'Uploading' || mode === 'Running' || mode === 'Processing') dot.classList.add('run');
+            if (mode === 'Completed') dot.classList.add('ok');
+            if (mode === 'Failed' || mode === 'Error') dot.classList.add('err');
+        }
+
+        function setError(err) {
+            els.errorLine.style.display = 'block';
+            els.errorLine.textContent = err;
+        }
+
+        function clearError() {
+            els.errorLine.style.display = 'none';
+            els.errorLine.textContent = '';
+        }
+
+        function setProgress(p) {
+            els.progressBar.style.width = Math.max(0, Math.min(100, p)) + '%';
+        }
+
+        function showLog(logText) {
+            if (logText) {
+                els.logOutput.style.display = 'block';
+                els.logOutput.textContent = logText;
+            } else {
+                els.logOutput.style.display = 'none';
+            }
+        }
+
+        function validate() {
+            if (!els.apiBase.value.trim()) throw new Error('Please enter API Base URL.');
+            if (!els.videoFile.files[0]) throw new Error('Please select a video file.');
+            if (!els.audioFile.files[0]) throw new Error('Please select an audio file.');
+        }
+
+        function enableUI(processing) {
+            els.startBtn.disabled = processing;
+            els.videoFile.disabled = processing;
+            els.audioFile.disabled = processing;
+            els.apiBase.disabled = processing;
+            els.outfileTag.disabled = processing;
+            isProcessing = processing;
+        }
+
+        // File handling
+        function handleFileChange() {
+            clearError();
+            if (els.videoFile.files[0]) {
+                const f = els.videoFile.files[0];
+                els.videoName.textContent = f.name + ' • ' + (f.size / 1e6).toFixed(2) + ' MB';
+                const url = URL.createObjectURL(f);
+                els.inputVideo.src = url;
+            }
+            if (els.audioFile.files[0]) {
+                const f = els.audioFile.files[0];
+                els.audioName.textContent = f.name + ' • ' + (f.size / 1e6).toFixed(2) + ' MB';
+                const url = URL.createObjectURL(f);
+                els.inputAudio.src = url;
+            }
+        }
+
+        els.videoFile.addEventListener('change', handleFileChange);
+        els.audioFile.addEventListener('change', handleFileChange);
+
+        // Drag & drop
+        ['dragenter', 'dragover'].forEach(ev => {
+            els.dropzone.addEventListener(ev, e => {
+                e.preventDefault();
+                els.dropzone.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(ev => {
+            els.dropzone.addEventListener(ev, e => {
+                e.preventDefault();
+                els.dropzone.classList.remove('dragover');
+            });
+        });
+
+        els.dropzone.addEventListener('drop', e => {
+            const files = Array.from(e.dataTransfer.files || []);
+            let usedVideo = false, usedAudio = false;
+            for (const f of files) {
+                if (!usedVideo && f.type.startsWith('video/')) {
+                    assignFile(els.videoFile, f);
+                    usedVideo = true;
+                } else if (!usedAudio && f.type.startsWith('audio/')) {
+                    assignFile(els.audioFile, f);
+                    usedAudio = true;
+                }
+            }
+            handleFileChange();
+        });
+
+        function assignFile(input, file) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+        }
+
+        // API functions
+        async function uploadVideo() {
+            const formData = new FormData();
+            formData.append('file', els.videoFile.files[0]);
+
+            const response = await fetch(`${els.apiBase.value}/upload/videofile_upload`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) throw new Error('Video upload failed');
+            const data = await response.json();
+            videoTag = data.video_tag;
+            return videoTag;
+        }
+
+        async function uploadAudio() {
+            const formData = new FormData();
+            formData.append('file', els.audioFile.files[0]);
+
+            const response = await fetch(`${els.apiBase.value}/upload/audiofile_upload`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) throw new Error('Audio upload failed');
+            const data = await response.json();
+            audioTag = data.audio_tag;
+            return audioTag;
+        }
+
+        async function startProcessing() {
+            const payload = {
+                video_tag: videoTag,
+                audio_tag: audioTag,
+                outfile_tag: els.outfileTag.value || 'output_video',
+                checkpoint_path: "/Users/suman/Desktop/projects/wav2lip/checkpoints/wav2lip_gan.pth",
+                segmentation_path: "/Users/suman/Desktop/projects/wav2lip/checkpoints/face_segmentation.pth",
+                sr_path: "/Users/suman/Desktop/projects/wav2lip/checkpoints/esrgan_max.pth",
+                no_sr: false,
+                no_segmentation: false
+            };
+
+            const response = await fetch(`${els.apiBase.value}/process/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) throw new Error('Processing start failed');
+            const data = await response.json();
+            processTag = data.process_tag;
+
+            // Save to localStorage
+            localStorage.setItem('wav2lip_process_tag', processTag);
+            els.jobInfo.textContent = 'Process ID: ' + processTag;
+
+            return processTag;
+        }
+
+        async function checkStatus() {
+            if (!processTag) return;
+
+            try {
+                const response = await fetch(`${els.apiBase.value}/process/status/${processTag}`);
+                if (!response.ok) throw new Error('Status check failed');
+
+                const data = await response.json();
+
+                if (data.running) {
+                    setStatus('Processing', 'Wav2Lip is running...');
+                    setProgress(50);
+                } else if (data.out_exists) {
+                    setStatus('Completed', 'Processing completed successfully!');
+                    setProgress(100);
+                    stopPolling();
+                    enableUI(false);
+                    await downloadResult();
+                } else if (data.returncode !== 0) {
+                    setStatus('Failed', 'Processing failed with errors');
+                    setProgress(0);
+                    stopPolling();
+                    enableUI(false);
+                    if (data.log_tail) {
+                        showLog(data.log_tail);
+                        setError('Check log output for details');
+                    }
+                }
+
+                if (data.log_tail) {
+                    showLog(data.log_tail);
+                }
+
+            } catch (error) {
+                setError('Status check failed: ' + error.message);
+            }
+        }
+
+        async function downloadResult() {
+            try {
+                const response = await fetch(`${els.apiBase.value}/download/${processTag}`);
+                if (!response.ok) throw new Error('Download failed');
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                els.outputVideo.src = url;
+                els.downloadLink.href = url;
+                els.downloadLink.download = `${els.outfileTag.value || 'output'}.mp4`;
+                els.downloadLink.style.display = 'inline';
+
+                // Auto-download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${els.outfileTag.value || 'output'}.mp4`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+            } catch (error) {
+                setError('Download failed: ' + error.message);
+            }
+        }
+
+        function startPolling() {
+            stopPolling();
+            pollTimer = setInterval(checkStatus, 2000);
+        }
+
+        function stopPolling() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+        }
+
+        // Event handlers
+        els.startBtn.addEventListener('click', async () => {
+            clearError();
+            showLog('');
+
+            try {
+                validate();
+            } catch (e) {
+                setError(e.message);
+                return;
+            }
+
+            enableUI(true);
+            setProgress(0);
+
+            try {
+                setStatus('Uploading', 'Uploading video file...');
+                setProgress(20);
+                await uploadVideo();
+
+                setStatus('Uploading', 'Uploading audio file...');
+                setProgress(40);
+                await uploadAudio();
+
+                setStatus('Processing', 'Starting Wav2Lip processing...');
+                setProgress(50);
+                await startProcessing();
+
+                startPolling();
+
+            } catch (error) {
+                setStatus('Failed', error.message);
+                setError(error.message);
+                enableUI(false);
+                setProgress(0);
+            }
+        });
+
+        els.resetBtn.addEventListener('click', () => {
+            processTag = '';
+            videoTag = '';
+            audioTag = '';
+            localStorage.removeItem('wav2lip_process_tag');
+            stopPolling();
+            enableUI(false);
+            setStatus('Idle', 'Waiting for inputs');
+            setProgress(0);
+            clearError();
+            showLog('');
+            els.jobInfo.textContent = '';
+            els.outputVideo.src = '';
+            els.downloadLink.style.display = 'none';
+        });
+
+        // Initialize
+        setStatus('Idle', 'Waiting for inputs');
+        setProgress(0);
+        loadSavedProcess();
+
+        // Persist API base URL
+        const LS_CONFIG_KEY = 'wav2lip_config';
+        try {
+            const saved = JSON.parse(localStorage.getItem(LS_CONFIG_KEY) || '{}');
+            if (saved.apiBase) els.apiBase.value = saved.apiBase;
+            if (saved.outfileTag) els.outfileTag.value = saved.outfileTag;
+        } catch { }
+
+        function persistConfig() {
+            try {
+                localStorage.setItem(LS_CONFIG_KEY, JSON.stringify({
+                    apiBase: els.apiBase.value,
+                    outfileTag: els.outfileTag.value
+                }));
+            } catch { }
+        }
+
+        els.apiBase.addEventListener('change', persistConfig);
+        els.outfileTag.addEventListener('change', persistConfig);
+    </script>
+</body>
+
+</html>
