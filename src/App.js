@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 function App() {
   const [videoFile, setVideoFile] = useState(null);
@@ -7,8 +7,8 @@ function App() {
   const [audioTag, setAudioTag] = useState('');
   const [processTag, setProcessTag] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [apiBase, setApiBase] = useState('http://0.0.0.0:8000');
-  const [outfileTag, setOutfileTag] = useState('output_video');
+  const [apiBase, setApiBase] = useState(process.env.REACT_APP_API_URL);
+  const [outfileTag, setOutfileTag] = useState('output_video.mp4');
   const [statusText, setStatusText] = useState('Idle');
   const [statusDetail, setStatusDetail] = useState('Waiting for inputs');
   const [jobInfo, setJobInfo] = useState('');
@@ -178,7 +178,7 @@ function App() {
     const payload = {
       video_tag: vTag,
       audio_tag: aTag,
-      outfile_tag: outfileTag || 'output_video',
+      outfile_tag: outfileTag || 'output_video.mp4',
       checkpoint_path: "/Users/suman/Desktop/projects/wav2lip/checkpoints/wav2lip_gan.pth",
       segmentation_path: "/Users/suman/Desktop/projects/wav2lip/checkpoints/face_segmentation.pth",
       sr_path: "/Users/suman/Desktop/projects/wav2lip/checkpoints/esrgan_max.pth",
